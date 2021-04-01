@@ -1,0 +1,17 @@
+{
+  "name": "storyteller-bot",
+  "version": "1.0.0",
+  "description": "The Storyteller Bot narrates an online game of Blood on the Clocktower via discord.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Miranda Girling",
+  "license": "ISC",
+  "dependencies": {
+    "config.json": "0.0.4",
+    "discord.js": "^12.3.1",
+    "mysql2": "^2.1.0",
+    "sequelize": "^6.3.5"
+  }
+}
