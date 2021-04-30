@@ -7,24 +7,8 @@ const evil = 1;
 const recluse = 2;
 const goodException = 3;
 const minion = 4;
-/**
- * "townsfolk": [
-    "chef",
-    "empath",
-    "fortune-teller",
-    "washerwoman",
-    "virgin",
-    "undertaker",
-    "soldier",
-    "slayer",
-    "ravenkeeper",
-    "monk",
-    "mayor",
-    "investigator",
-    "librarian"
-  ],
- */
-var { townsfolk, outsiders, minions, firstnight, night } = require('./config.json');
+
+ownsfolk, outsiders, minions, firstnight, night } = require('./config.json');
 var format = /[`#$%^&*()_+\-=\[\]{};':"\\|,.\/?~]/;
 var players;
 var playerRoles = {};
@@ -419,11 +403,13 @@ async function nominationsOpen()
 async function checkGameOver()
 {
     var [imp, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE role = 'imp' AND alive = 1;`);
-    if (imp.length === 0) {
+    var [town, metadata] = await sequelize.query(`SELECT COUNT(*) AS count FROM \`${server}\` WHERE alive = 1;`);
+
+    if (imp.length === 0)
+    {
         channel.send("**GAME OVER** Good wins.");
         return true;
     }
-    var [town, metadata] = await sequelize.query(`SELECT COUNT(*) AS count FROM \`${server}\` WHERE alive = 1;`);
     if (town[0].count <= 2) {
         channel.send("**GAME OVER ** Evil wins.");
         return true;
@@ -432,16 +418,34 @@ async function checkGameOver()
     return false;
 }
 
+async function mayor()
+{
+    var [mayor, metadata] = await sequelize.query(`SELECT id FROM \`${server}\` WHERE role = 'mayor' AND alive = 1;`);
+    var [town, metadata] = await sequelize.query(`SELECT COUNT(*) AS count FROM \`${server}\` WHERE alive = 1;`);
+    if (town[0].count === 3 && !(await isDrunk(mayor[0].id)))
+    {
+        channel.send("**GAME OVER** Good wins.");
+        return true;
+    }
+    return false;
+}
+
 async function nightPhase()
 {
     console.log("night phase...");
     var [results, metadata] = await sequelize.query(`SELECT upForEx FROM \`games\` WHERE server = '${server}' AND upForEx IS NOT NULL;`);
+    var gameOver;
     if (results.length === 1)
     {
         channel.send(`${results[0].upForEx} has been executed.`);
         await kill(results[0].upForEx);
+        gameOver = await checkGameOver();
     }
-    var gameOver = await checkGameOver();
+    else 
+    {
+       gameOver = await mayor();
+    }
+    //var gameOver = await checkGameOver();
     if (gameOver) return;
     await sequelize.query(`UPDATE \`games\` SET maxVotes = 0 WHERE server = '${server}';`);
     await sequelize.query(`UPDATE \`${server}\` SET poisoned = 0 WHERE poisoned = 1;`);
@@ -473,7 +477,7 @@ async function nightPhase()
                 let value = results[player].role;
                 if (value === night[p]) {
                     const [results1, metadata1] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 1 WHERE id = '${results[player].id}';`);
-                    console.log("starting...");
+                    console.log(`starting... ${results[player].id}`);
                     await nightAction(results[player].id, value);
                     console.log("completed");
                 }
@@ -488,8 +492,8 @@ async function nightPhase()
 
 async function firstNightAction(player, role)
 {
-    if (currPlayer === player) return;
-    currPlayer = player;
+   // if (currPlayer === player) return;
+   // currPlayer = player;
     if (minions.includes(role))
     {
         await minionInfo(player);
@@ -533,8 +537,8 @@ async function firstNightAction(player, role)
 
 async function nightAction(player, role)
 {
-    if (currPlayer === player) return;
-    currPlayer = player;
+  //  if (currPlayer === player) return;
+   // currPlayer = player;
     if (role === "poisoner")
     {
         await poisoner(player);
@@ -626,6 +630,7 @@ async function chooseComparisonPairs(player, type)
 
 async function waitForAction(player)
 {
+    console.log("WAITING FOR ACTION");
     waitingForAction = true;
     var [results, metadata] = await sequelize.query(`SELECT isTurn FROM \`${server}\` WHERE id = '${player}\';`);
     while (results[0].isTurn != 0) {
@@ -653,16 +658,17 @@ async function undertaker(player)
     var [deceased, metadata] = await sequelize.query(`SELECT upForEx FROM \`games\` WHERE server = '${server}' AND upForEx IS NOT NULL;`);
     if (deceased.length === 0) return;
     var [results, metadata] = await sequelize.query(`SELECT role, alignment FROM \`${server}\` WHERE name = '${deceased[0].upForEx}';`);
+    console.log(deceased[0].upForEx);
     if (!(await isDrunk(player)))
     {
-        console.log(`${deceased[0].upForEx} was the ${results[0].role}.`);
+        return console.log(`${deceased[0].upForEx} was the ${results[0].role}.`);
     }
     else
     {
         if (results[0].alignment === 1)
         {
             shuffleArray(townsfolk);
-            console.log(`${deceased[0].name} was the ${townsfolk[0]}.`);
+           return console.log(`${deceased[0].upForEx} was the ${townsfolk[0]}.`);
         }
         else (results[0].alignment === 0)
         {
@@ -670,11 +676,11 @@ async function undertaker(player)
             if (r != 1)
             {
                 shuffleArray(minions)
-                console.log(`${deceased[0].name} was the ${minions[0]}.`);
+                return console.log(`${deceased[0].upForEx} was the ${minions[0]}.`);
             }
             else
             {
-                console.log(`${deceased[0].name} was the imp.`);
+                return console.log(`${deceased[0].upForEx} was the imp.`);
             }
         }
     }
@@ -682,6 +688,7 @@ async function undertaker(player)
 
 async function imp(player)
 {
+    console.log("processing imp");
     //guild.members.cache.get(player).send("Pick a player to kill using *!kill <player>*");
    await waitForAction(player);
 }
