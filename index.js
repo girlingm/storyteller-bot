@@ -8,7 +8,7 @@ const recluse = 2;
 const goodException = 3;
 const minion = 4;
 
-ownsfolk, outsiders, minions, firstnight, night } = require('./config.json');
+var {townsfolk, outsiders, minions, firstnight, night } = require('./config.json');
 var format = /[`#$%^&*()_+\-=\[\]{};':"\\|,.\/?~]/;
 var players;
 var playerRoles = {};
