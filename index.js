@@ -93,7 +93,7 @@ async function receiveText(message) {
         await createGameData();
     }
     else if (game) {
-        console.log(waitingForAction);
+
         // global commands
         if (!waitingForAction)
         {
@@ -186,8 +186,8 @@ async function receiveText(message) {
                     }
                     else {
                         var [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET poisoned = 1 WHERE name = '${args[0]}';`);
-                        if (results.length < 1) return chanel.send("Invalid player name. Try again.")
-                        console.log(results);
+                        if (results.length < 1) return channel.send("Invalid player name. Try again.")
+                       // console.log(results);
                         [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'poisoner';`);
                         return channel.send(`${args[0]} has been poisoned.`);
                     }
@@ -305,7 +305,7 @@ async function isRole(player, role)
 {
     console.log(`PLAYER: ${player}`);
     var [results, metadata] = await sequelize.query(`SELECT role FROM \`${server}\` WHERE id = '${player}';`);
-    console.log(results[0].role);
+   // console.log(results[0].role);
     if (results[0].role === role) return true;
     return false;
 }
@@ -675,35 +675,35 @@ async function chooseComparisonPairs(player, type)
         drunk = true;
         playerRole = results[0].role;
     }
-    console.log(`Is drunk ? ${drunk}`);
+  //  console.log(`Is drunk ? ${drunk}`);
     do {
         index = Math.floor(Math.random() * (numPlayers));
         [results, metadata] = await sequelize.query(`SELECT role, drunk FROM \`${server}\` WHERE position = ${index};`);        
     } while (players[index] === player || !(drunk || type.includes(results[0].role) || (type === outsiders && results[0].drunk === 1)));
-    console.log(`first comparison selected`);
+  //  console.log(`first comparison selected`);
     role = (type === outsiders && results[0].drunk === 1) ? "drunk" : results[0].role;
-    console.log(role);
-    console.log(`Set of townsfolk: ${type}`);
+  //  console.log(role);
+  //  console.log(`Set of townsfolk: ${type}`);
     do {
         index2 = Math.floor(Math.random() * (numPlayers));
     } while (players[index2] === player || index === index2);
-    console.log(`second comparison selected`);
+  //  console.log(`second comparison selected`);
     r = Math.floor(Math.random() * 1);
     if (drunk)
     {
         do {
             var temp = Math.floor(Math.random() * (type.length))
             role = type[temp];
-            console.log(role);
+         //   console.log(role);
         } while (role === playerRole);
         
     }
-    console.log(`print results:`);
+    //console.log(`print results:`);
     if (r === 1) {
-         console.log(`Either ${guild.member(players[index]).displayName} or ${guild.member(players[index2]).displayName} is ${role}`);
+         await sendMessage(player, `Either ${guild.member(players[index]).displayName} or ${guild.member(players[index2]).displayName} is ${role}`);
     }
     else {
-        console.log(`Either ${guild.member(players[index2]).displayName} or ${guild.member(players[index]).displayName} is ${role}`);
+        await sendMessage(player, `Either ${guild.member(players[index2]).displayName} or ${guild.member(players[index]).displayName} is ${role}`);
     }  
 }
 
@@ -732,12 +732,12 @@ async function scarletwoman(player)
 async function ravenkeeper(player)
 {
     var [results, metadata] = await sequelize.query(`SELECT deathLastNight FROM \`games\` WHERE server = '${server}\' AND deathLastNight IS NOT NULL;`);
-    console.log("HERE");
     if (results.length === 0) return;
     var [name, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE id = '${player}';`);
     if (results[0].deathLastNight === name[0].name)
     {
         console.log("Ravenkeeper pick player to check");
+        await sendMessage(player, "You have been killed. Pick a player to check: use the command *!check <player_nickname>*");
         await waitForAction(player);
     }
 }
@@ -776,26 +776,34 @@ async function undertaker(player)
     }
 }
 
+async function sendMessage(player, message)
+{
+   // guild.members.cache.get(player).send(message);
+    var [results, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE id = '${player}';`);
+    console.log(`->${results[0].name}: ${message}`);
+}
+
 async function imp(player)
 {
     console.log("processing imp");
     //guild.members.cache.get(player).send("Pick a player to kill using *!kill <player>*");
-   await waitForAction(player);
+    await sendMessage(player, "Pick a player to kill using *!kill <player>*");
+    await waitForAction(player);
 }
 
 async function monk(player)
 {
     //guild.members.cache.get(player).send("Pick a player to protect using *!protect <player>*");
+    await sendMessage(player, "Pick a player to protect using *!protect <player>*");
     await waitForAction(player);
 }
 
 async function spy(player)
 {
-    console.log("spy info: ");
     const [results, metadata] = await sequelize.query(`SELECT name, role, poisoned, drunk FROM \`${server}\` ORDER BY position ASC;`);
     for (var r in results)
     {
-        console.log(`${results[r].name}: ${results[r].role} ${results[r].drunk === 1 ? '|DRUNK|' : ''}${results[r].poisoned === 1 ? '|POISONED|' : ''}`);
+        await sendMessage(player, `${results[r].name}: ${results[r].role} ${results[r].drunk === 1 ? '|DRUNK|' : ''}${results[r].poisoned === 1 ? '|POISONED|' : ''}`);
     }
 }
 
@@ -821,7 +829,7 @@ async function librarian(player)
     }
     else
     {
-        console.log("no outsiders in play");
+        await sendMessage(player, "no outsiders in play");
     }
 }
 
@@ -833,21 +841,23 @@ async function investigator(player)
 async function poisoner(player)
 {
     //guild.members.cache.get(player).send("Pick a player to poison: use the command **!poison <@player>");
-    console.log("POISON ACTION:");
+    await sendMessage(player, "Pick a player to poison: use the command *!poison <player_nickname>*");
+  //  console.log("POISON ACTION:");
     await waitForAction(player);
-    console.log("poison action");
+  //  console.log("poison action");
     
 }
 
 async function butler(player)
 {
+    await sendMessage(player, "Pick a player to vote with: use the command *!butler <player_nickname>*");
     await waitForAction(player)
-    console.log("butler action");
+   // console.log("butler action");
 }
 
 async function washerwoman(player)
 {
-    console.log("washerwoman");
+  //  console.log("washerwoman");
     await chooseComparisonPairs(player, townsfolk);
 }
 
@@ -881,8 +891,9 @@ async function chef(player)
     {
          pairCount = Math.floor(Math.random() * 1);
     }
-    console.log(`There are ${pairCount} pairs of evil players sitting next to each other.`);
+    await sendMessage(player, `There are ${pairCount} pairs of evil players sitting next to each other.`);
     //guild.members.cache.get(player).send(`There are ${pairCount} pairs of evil players sitting next to each other.`);
+
 }
 
 async function nextAlignment(index, increment, count)
@@ -920,14 +931,15 @@ async function empath(player)
         count = count + await nextAlignment(index, 1);      
     }
 
-    console.log(`There are ${count} evil players sitting next to you.`);
+    await sendMessage(player, `There are ${count} evil players sitting next to you.`);
     //guild.members.cache.get(player).send(`There are ${count} evil players sitting next to you.`);
 }
 
 async function fortuneteller(player)
 {
     
-    console.log("fortune teller action");
+    //console.log("fortune teller action");
+    await sendMessage(player, "Pick players to check: use command *!fortune <player_nickname_1> <player_nickname_2>*");
     await waitForAction(player);
     //guild.members.cache.get(player).send("Pick players to check: use command *!fortune <@player1> <@player2>*");
 }
@@ -936,7 +948,7 @@ async function minionInfo(player)
 {
     console.log(demon);
     const [results, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE role = 'imp';`);
-    console.log(`Your demon is ${results[0].name}.`);
+    await sendMessage(player, `Your demon is ${results[0].name}.`);
     //guild.members.cache.get(player).send(`Your demon is ${results[0].name}.`);
     minions.push(player);
 }
@@ -945,13 +957,13 @@ async function demonInfo(player)
 {
    // guild.members.cache.get(player).send("Your minions are:");
     const [results, metadata] = await sequelize.query(`SELECT id, name, role FROM \`${server}\` WHERE alignment = 1;`);
-    console.log(results);
+   // console.log(results);
     for (var result in results)
     {
         
         if (results[result].id != player) {
-           // guild.members.cache.get(player).send(`${results[result].name}`);
-            console.log(results[result].name);
+           await sendMessage(player, `${results[result].name} is the ${results[result].role}`);
+           // console.log(results[result].name);
         }
     }
 }
@@ -1026,7 +1038,6 @@ async function initGame()
 
 async function assignRole(player, role) {
     playerRoles[player] = role;
-    //guild.members.cache.get(player).send(`${role} is your role.`);
     playerStatus[player] = 'A';
     console.log("CREATING PLAYER");
     const newPlayer = await ServerGame.create(
@@ -1035,6 +1046,7 @@ async function assignRole(player, role) {
             alignment: (minions.includes(role) || role === 'imp' ? evil : good), protected: (role === 'soldier' ? 1 : 0)
         });
     await newPlayer.save();
+    await sendMessage(player, `${role} is your role.`);
 }
 
 async function loadGame(server) {
