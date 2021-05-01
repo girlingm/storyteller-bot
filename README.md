@@ -14,7 +14,7 @@ Node.js modules used:
 * Discord.js
 
 **NOTE** (02/04/21): currently the bot prints all output and takes all input from the main channel in the server (for debugging purposes the identify of the user calling commands for specific roles is not checked).
-Once I have implemented all roles (and drunkeness for each role) I will change this and start beta testing :) in the meantime I've removed that feature so as not too annoy my friends too much.
+Once I have implemented all roles (and drunkenness for each role) I will change this and start beta testing :) in the meantime I've removed that feature so as not too annoy my friends too much.
 
 ## Commands
 
@@ -26,6 +26,7 @@ Once I have implemented all roles (and drunkeness for each role) I will change t
  * _!nominate <player_nickname>_ nominates a player for execution
  * _!start-vote_ starts voting on the player who is currently up for execution
  * _!vote <yes/no>_ votes on currently nominated played 
+ * _!slay <player_nickname>_ (slayer) attempts to slay a player
 
 ### Private (in DMs with bot)
   * _!kill <player_nickname>_ (demon) attacks player
@@ -57,17 +58,17 @@ Once I have implemented all roles (and drunkeness for each role) I will change t
 | Virgin         | [x]   | [x]   |
 | Undertaker     | [X]   | [X]   |
 | Soldier        | [x]   | [x]   |
-| Slayer         | []    | []    |
-| Ravenkeeper    | [x]   | []    |
+| Slayer         | [X]   | [X]   |
+| Ravenkeeper    | [x]   | [X]   |
 | Monk           | [x]   | [x]   |
 | Mayor          | [X]   | [X]   |
 | Investigator   | [x]   | [x]   |
 | Librarian      | [x]   | [x]   |
-| Saint          | []    | []    |
+| Saint          | [X]   | []    |
 | Recluse        | [x]   | []    |
 | Butler         | [x]   | [x]   |
-| Spy            | []    | []    |
-| Scarlet Woman  | []    | []    |
+| Spy            | [X]   | []    |
+| Scarlet Woman  | [X]   | []    |
 | Poisoner       | [x]   | []    |
 | Baron          | [x]   | [x]   |
 | Imp            | [x]   | []    |
