@@ -56,19 +56,19 @@ Once I have implemented all roles (and drunkenness for each role) I will change 
 | Fortune Teller | [x]   | [x]   |
 | Washerwoman    | [x]   | [x]   |
 | Virgin         | [x]   | [x]   |
-| Undertaker     | [X]   | [X]   |
+| Undertaker     | [x]   | [x]   |
 | Soldier        | [x]   | [x]   |
-| Slayer         | [X]   | [X]   |
-| Ravenkeeper    | [x]   | [X]   |
+| Slayer         | [x]   | [x]   |
+| Ravenkeeper    | [x]   | [x]   |
 | Monk           | [x]   | [x]   |
-| Mayor          | [X]   | [X]   |
+| Mayor          | [x]   | [x]   |
 | Investigator   | [x]   | [x]   |
 | Librarian      | [x]   | [x]   |
-| Saint          | [X]   | []    |
+| Saint          | [x]   | []    |
 | Recluse        | [x]   | []    |
 | Butler         | [x]   | [x]   |
-| Spy            | [X]   | []    |
-| Scarlet Woman  | [X]   | []    |
+| Spy            | [x]   | []    |
+| Scarlet Woman  | [x]   | []    |
 | Poisoner       | [x]   | []    |
 | Baron          | [x]   | [x]   |
 | Imp            | [x]   | []    |
