@@ -64,7 +64,7 @@ Once I have implemented all roles (and drunkenness for each role) I will change 
 | Mayor          | [x]   | [x]   |
 | Investigator   | [x]   | [x]   |
 | Librarian      | [x]   | [x]   |
-| Saint          | [x]   | []    |
+| Saint          | [x]   | [x]   |
 | Recluse        | [x]   | []    |
 | Butler         | [x]   | [x]   |
 | Spy            | [x]   | []    |
