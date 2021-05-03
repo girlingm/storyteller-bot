@@ -123,8 +123,8 @@ async function receiveText(message) {
                     var [results, metadata] = await sequelize.query(`SELECT currentVoter FROM \`games\` WHERE server = '${server}';`);
                     if (results.length === 1)
                     {
-                       // if (results[0].currentVoter === message.author.id)
-                        //{
+                        if (results[0].currentVoter === message.author.id)
+                        {
                             [results, metadata] = await sequelize.query(`SELECT votes, currentVoter from \`games\`  WHERE server = '${server}';`);
                             //vote
                             if (args[0].toLowerCase() === "yes") {                        
@@ -146,7 +146,7 @@ async function receiveText(message) {
                             var nominalAmt = Math.ceil(results1[0].alivePlayers / 2);
                             channel.send(`${results[0].votes} votes for execution. ${nominalAmt > max[0].maxVotes ? nominalAmt : max[0].maxVotes} votes needed to execute.`);
                             [results, metadata] = await sequelize.query(`UPDATE \`games\` SET currentVoter = '' WHERE server = '${server}';`);
-                       // }
+                        }
                     }
                     break;
                 case 'slay':
@@ -245,7 +245,7 @@ async function receiveText(message) {
                     {
                         var [results, metadata] = await sequelize.query(`SELECT protected, role FROM \`${server}\` WHERE name = '${args[0]}';`);
                         if (results.length != 1) return channel.send("Please enter a player to kill.");
-                        if (results[0].protected !== 1 /*&& !(await isDrunk(sender))*/) await kill(args[0]);
+                        if (results[0].protected != 1 /*&& !(await isDrunk(sender))*/) await kill(args[0]);
                         await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'imp';`);
                         if (results[0].role === 'imp') await transferImp();
                         return channel.send(`${args[0]} has been attacked.`)
@@ -356,7 +356,8 @@ async function transferImp()
         {
             chosen = results[0];
         }
-        console.log(`${chosen.name} is the new imp.`);
+      //  console.log(`${chosen.name} is the new imp.`);
+        await sendMessage(player, `You are now the imp.`);
         //send message to new imp
         await sequelize.query(`UPDATE \`${server}\` SET role = 'imp' WHERE id = '${chosen.id}';`);
     }
@@ -472,6 +473,7 @@ async function checkGameOver()
 
     if (imp.length === 0)
     {
+        console.log("NO IMP");
         var [scarletW, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE role = 'scarlet-woman';`);
         if (!(scarletW.length === 1 && town[0].count >= 4))
         {
@@ -559,9 +561,9 @@ async function nightPhase()
             }
         }
         await sequelize.query(`UPDATE \`games\` SET upForEx = NULL, deathLastNight = NULL WHERE server = '${server}';`);    
-        gameOver = await checkGameOver();
-        channel.send("Night sequence complete. Everybody wake up.");
+        gameOver = await checkGameOver();     
         if (gameOver) return;
+        channel.send("Night sequence complete. Everybody wake up.");
     }
 }
 
@@ -726,7 +728,7 @@ async function scarletwoman(player)
     var [deceased, metadata] = await sequelize.query(`SELECT role FROM \`${server}\` INNER JOIN \`games\` ON upForEx = name AND server = '${server}';`);    
     if (deceased.length === 0 || deceased[0].role != 'imp') return;
     await sequelize.query(`UPDATE \`${server}\` SET role = 'imp' WHERE id = '${player}';`);
-    console.log(`${player} is the new imp.`);
+    console.send(`${player} is the new imp.`);
 }
 
 async function ravenkeeper(player)
@@ -751,26 +753,26 @@ async function undertaker(player)
     console.log(deceased[0].upForEx);
     if (!(await isDrunk(player)))
     {
-        return console.log(`${deceased[0].upForEx} was the ${results[0].role}.`);
+        await sendMessage(player, `${deceased[0].upForEx} was the ${results[0].role}.`);
     }
     else
     {
         if (results[0].alignment === 1)
         {
             shuffleArray(townsfolk);
-           return console.log(`${deceased[0].upForEx} was the ${townsfolk[0]}.`);
+            await sendMessage(player, `${deceased[0].upForEx} was the ${townsfolk[0]}.`);
         }
         else (results[0].alignment === 0)
         {
             var r = Math.random() * 3;
             if (r != 1)
-            {
+            {               
                 shuffleArray(minions)
-                return console.log(`${deceased[0].upForEx} was the ${minions[0]}.`);
+                await sendMessage(player, `${deceased[0].upForEx} was the ${minions[0]}.`);
             }
             else
             {
-                return console.log(`${deceased[0].upForEx} was the imp.`);
+                await sendMessage(player, `${deceased[0].upForEx} was the imp.`);
             }
         }
     }
@@ -778,7 +780,7 @@ async function undertaker(player)
 
 async function sendMessage(player, message)
 {
-   // guild.members.cache.get(player).send(message);
+  //  guild.members.cache.get(player).send(message);
     var [results, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE id = '${player}';`);
     console.log(`->${results[0].name}: ${message}`);
 }
@@ -1066,7 +1068,7 @@ async function createSeatingPlan()
         console.log(players[i]);
         let nickname = guild.member(players[i]).displayName;
         if (!guild.member(players[i]).hasPermission("ADMINISTRATOR")) {            
-            //guild.member(players[i]).setNickname(`${i} ${nickname}`);
+            guild.member(players[i]).setNickname(`${i} ${nickname}`);
         }
         else
         {
