@@ -31,6 +31,7 @@ var fortuneFalsePositive;
 var ServerGame;
 var GameData;
 var waitingForAction = false;
+var mainChannel;
 
 const sequelize = new Sequelize(dbName, dbUsername, dbPassword, {
     host: dbIP,
@@ -49,10 +50,8 @@ async function connect() {
     }
 }
 
-client.once('ready', () => {
-    
+client.once('ready', () => {   
     console.log('Ready!');
-   // console.log(prefix);
 });
 
 client.on('message', message => {
@@ -78,6 +77,11 @@ async function receiveText(message) {
     console.log(command);
     if (command === 'init') {
         guild = message.guild;
+        server = message.guild.id;
+        mainChannel = channel;
+        await createTable(server);
+        await createGameData();
+
         if (!args.length) {
             return channel.send('You need to give me the players\' IDs!');
         }
@@ -91,26 +95,21 @@ async function receiveText(message) {
 
         }
     }
-    else if (command === 'join') {
-        server = message.guild.id;
-        await createTable(server);
-        await createGameData();
-    }
     else if (game) {
 
         // global commands
        // if (!waitingForAction)
       //  {
-            if (guild === null) return channel.send ("This ability must be performed publicly (not in a DM).");
+            if (message.guild != null){
             switch (command)
             {
                 case 'night':
                     nightNum++;
                     nightPhase();
-                    break;
+                    return;
                 case 'open-nominations':
                     await nominationsOpen();
-                    break;
+                    return;
                 case 'nominate':
                     if (args.length < 1) return channel.send("Please enter a player to nominate");
                     var [results, metadata] = await sequelize.query(`SELECT * FROM \`games\` WHERE nominee is NULL AND server = '${server}';`);
@@ -118,17 +117,17 @@ async function receiveText(message) {
                     console.log(results.length);
                     if (results.length < 1) return channel.send("A nomination is already in progress. Please wait until voting has concluded before making a new nomination.");
                     await nominate(args[0], message.author.id);    
-                    break;
+                    return;
                 case 'start-vote':
                     await voteOnNominee();
-                    break;
+                    return;
                 case 'vote':
                     if (args.length < 1) return channel.send("Vote either 'Yes' or 'No'.");
                     var [results, metadata] = await sequelize.query(`SELECT currentVoter FROM \`games\` WHERE server = '${server}';`);
                     if (results.length === 1)
                     {
-                      //  if (results[0].currentVoter === message.author.id)
-                      //  {
+                        if (results[0].currentVoter === message.author.id)
+                       {
                             [results, metadata] = await sequelize.query(`SELECT votes, currentVoter from \`games\`  WHERE server = '${server}';`);
                             //vote
                             if (args[0].toLowerCase() === "yes") {                        
@@ -150,9 +149,10 @@ async function receiveText(message) {
                             var nominalAmt = Math.ceil(results1[0].alivePlayers / 2);
                             channel.send(`${results[0].votes} votes for execution. ${nominalAmt > max[0].maxVotes ? nominalAmt : max[0].maxVotes} votes needed to execute.`);
                             [results, metadata] = await sequelize.query(`UPDATE \`games\` SET currentVoter = '' WHERE server = '${server}';`);
-                       // }
+                        }
                     }
-                    break;
+                    return;
+            
                 case 'slay':
                     
                     if (args.length != 1) return channel.send("This ability takes a maximum of one argument.");
@@ -170,21 +170,17 @@ async function receiveText(message) {
                         await sequelize.query(`UPDATE \`${server}\` SET drunk = 1 WHERE role = 'slayer';`)
                     }
                     return channel.send("Nothing happens...");
-                    //get person sending message
-                    //if slayer + !drunk or poisoned:
-                    //      check argument
-                    //      if demon: end game good wins
-                    // else:
-                    //     nothing happens
-                    break;
+             
                                            
              }
         
-       // else       //individual commands
-        //{
+            }
+       else       //individual commands
+        {
             switch (command)
             {
                 case 'poison':
+                    if (!(await util.isRole(sender, 'poisoner'))) return channel.send("You are not the poisoner");
                     if (args.length != 1) {
                         return channel.send("You need to mention a user to poison.");
                     }
@@ -200,6 +196,7 @@ async function receiveText(message) {
                         return channel.send(`${args[0]} has been poisoned.`);
                     }
                 case 'fortune':
+                    if (!(await util.isRole(sender, 'fortune-teller'))) return channel.send("You are not the fortune-teller");
                     if (args.length != 2) {
                         return channel.send("You need to give me two players to check if either is a demon.");
                     }
@@ -208,15 +205,16 @@ async function receiveText(message) {
                         var [results, metadata] = await sequelize.query(`SELECT role, alignment FROM \`${server}\` WHERE name = '${args[0]}' OR name = '${args[1]}'`);
                         if (results.length < 2) return chanel.send("Invalid player names. Try again.")
                         if (results[0].role === "imp" || results[1].role === "imp" || results[0].alignment === goodException || results[1].alignment === goodException || results[0].alignment === recluse || results[1].alignment === recluse) {
-                            channel.send("One or more of these players is a demon.");
+                           channel.send("One or more of these players is a demon.");
                         }
                         else {
                             channel.send("Neither of these players are a demon.");
                         }
                         [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'fortune-teller';`);
                     }
-                    break;
+                    return;
                 case 'butler':
+                    if (!(await util.isRole(sender, 'butler'))) return channel.send("You are not the butler");
                     if (args.length != 1)
                     {
                         return channel.send("Please select one player to vote with.");
@@ -225,11 +223,12 @@ async function receiveText(message) {
                     {
                         var [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET butlerTarget = 1 WHERE name = '${args[0]}';`);
                         if (results.length < 1) return channel.send("Invalid player name. Try again.");
-                        channel.send(`You may only vote if/when ${args[0]} votes.`);
                         [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'butler';`);
+                        channel.send(`You may only vote if/when ${args[0]} votes.`);
                     }
-                    break;
+                    return;
                 case 'protect':
+                    if (!(await util.isRole(sender, 'monk'))) return channel.send("You are not the monk");
                     if (args.length === 1)
                     {
                         var [results, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE name = '${args[0]}';`);
@@ -237,29 +236,33 @@ async function receiveText(message) {
                         if (results.length === 1)
                         {
                             [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'monk';`);
-                            return channel.send(`${args[0]} has been protected.`);
+                            channel.send(`${args[0]} has been protected.`);
                         }
                         else
                         {
-                            return channel.send("Invalid player name.");
+                             channel.send("Invalid player name.");
                         }
                     }
                     else
                     {
-                        return channel.send("Please enter a player to protect.");
+                         channel.send("Please enter a player to protect.");
                     }
+                    [results, metadata] = await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'monk';`);
+                    return;
                 case 'kill':
+                    if (!(await util.isRole(sender, 'imp'))) return channel.send("You are not the imp");
                     if (args.length === 1)
                     {
                         var [results, metadata] = await sequelize.query(`SELECT protected, role FROM \`${server}\` WHERE name = '${args[0]}';`);
                         if (results.length != 1) return channel.send("Please enter a player to kill.");
-                        if (results[0].protected != 1 /*&& !(await util.isDrunk(sender))*/) await kill(args[0]);
+                        if (results[0].protected != 1 && !(await util.isDrunk(sender))) await kill(args[0]);
                         await sequelize.query(`UPDATE \`${server}\` SET isTurn = 0 WHERE role = 'imp';`);
                         if (results[0].role === 'imp') await transferImp();
                         return channel.send(`${args[0]} has been attacked.`)
                     }
                     break;
                 case 'check':
+                    if (!(await util.isRole(sender, 'ravenkeeper'))) return channel.send("You are not the ravenkeeper");
                     if (args.length === 1)
                     {
                         if (!(await util.checkIfValidPlayer(args[0]))) return channel.send("Please enter a valid player to check.");
@@ -299,9 +302,9 @@ async function receiveText(message) {
                     }
                     break;
             }
-       // }
+        }
 
-
+       // return channel.send("Invalid command. If trying to perform a night action, do so in a DM rather than a server. Likewise if trying to perform a public day action, do so in a server.");
        
         }
     else {
@@ -319,14 +322,25 @@ async function getPlayers()
     return players;
 }
 
-async function getGuild()
+async function getGuild(player, message)
 {
-    return guild;
+    console.log(guild.members.cache.get(player));
+   guild.members.cache.get(player).send(message);
 }
 
 async function getSequelize()
 {
     return sequelize;
+}
+
+async function getDisplayName(id)
+{
+    return guild.member(id).displayName
+}
+
+async function getNumPlayers()
+{
+    return numPlayers;
 }
 
 async function kill(playername)
@@ -349,8 +363,9 @@ async function kill(playername)
           guild.member(results[0].id).setNickname(`${nickname} [DEAD]`);
     }
     else {
-        channel.send(`${nickname} please change your nickname to '${nickname} [DEAD]' as I don't have the permissions to do it for you :(`);
+       mainChannel.send(`${nickname} please change your nickname to '${nickname} [DEAD]' as I don't have the permissions to do it for you :(`);
     }
+    mainChannel.send(`${nickname} is now dead.`)
     return true;
 }
 
@@ -458,7 +473,8 @@ async function nominate(name, player)
                 channel.send(`${name} is the virgin! ${results[0].name} takes their virginity and is immediately executed.`);
                 return kill(results[0].name);
             }
-        }       
+        }      
+        await sequelize.query(`UPDATE \`${server}\` SET drunk = 1 WHERE role = 'virgin';`); 
     }
     else
     {
@@ -486,15 +502,15 @@ async function checkGameOver()
     if (imp.length === 0)
     {
         console.log("NO IMP");
-        var [scarletW, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE role = 'scarlet-woman';`);
+        var [scarletW, metadata] = await sequelize.query(`SELECT name FROM \`${server}\` WHERE role = 'scarlet-woman' AND alive = 1;`);
         if (!(scarletW.length === 1 && town[0].count >= 4))
         {
-            channel.send("**GAME OVER** Good wins.");
+            mainChannel.send("**GAME OVER** Good wins.");
             return true;
         }        
     }
     if (town[0].count <= 2) {
-        channel.send("**GAME OVER ** Evil wins.");
+        mainChannel.send("**GAME OVER ** Evil wins.");
         return true;
     }
     //channel.send("The game continues...");
@@ -554,7 +570,7 @@ async function nightPhase()
                 }
             }
         }
-        channel.send("Night sequence complete. Everybody wake up.");
+        mainChannel.send("Night sequence complete. Everybody wake up.");
         nightNum++
     }
     else 
@@ -575,14 +591,12 @@ async function nightPhase()
         await sequelize.query(`UPDATE \`games\` SET upForEx = NULL, deathLastNight = NULL WHERE server = '${server}';`);    
         gameOver = await checkGameOver();     
         if (gameOver) return;
-        channel.send("Night sequence complete. Everybody wake up.");
+        mainChannel.send("Night sequence complete. Everybody wake up.");
     }
 }
 
 async function firstNightAction(player, role)
 {
-   // if (currPlayer === player) return;
-   // currPlayer = player;
     if (minions.includes(role))
     {
         await roles.minionInfo(player);
@@ -630,8 +644,6 @@ async function firstNightAction(player, role)
 
 async function nightAction(player, role)
 {
-  //  if (currPlayer === player) return;
-   // currPlayer = player;
     if (role === "poisoner")
     {
         await roles.poisoner(player);
@@ -701,7 +713,7 @@ async function initGame()
     }
     else
     {
-        numOutsiders = (2 - (numPlayers % 3));
+        numOutsiders = ((numPlayers - 1) % 3);
     }
     if (numPlayers > 1) {
         for (; count < numMinions; count++) {
@@ -773,7 +785,7 @@ async function createSeatingPlan()
         console.log(players[i]);
         let nickname = guild.member(players[i]).displayName;
         if (!guild.member(players[i]).hasPermission("ADMINISTRATOR")) {            
-         //   guild.member(players[i]).setNickname(`${i} ${nickname}`);
+            guild.member(players[i]).setNickname(`${i} ${nickname}`);
         }
         else
         {
@@ -916,6 +928,8 @@ module.exports.getSequelize = getSequelize;
 module.exports.getServer = getServer;
 module.exports.getPlayers = getPlayers;
 module.exports.getGuild = getGuild;
+module.exports.getDisplayName = getDisplayName;
+module.exports.getNumPlayers = getNumPlayers;
 module.exports.sequelize = sequelize;
 module.exports.good = good;
 module.exports.evil = evil;
@@ -923,3 +937,4 @@ module.exports.recluse = recluse;
 module.exports.goodException = goodException;
 module.exports.townsfolk = townsfolk;
 module.exports.minions = minions;
+

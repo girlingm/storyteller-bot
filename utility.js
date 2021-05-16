@@ -1,10 +1,11 @@
  
  const { Sequelize, DataTypes, QueryTypes } = require('sequelize');
-
+ var {townsfolk, outsiders, minions, firstnight, night } = require('./config.json');
  const global = require('./index.js');
  async function sendMessage(player, message)
 {
-  //  guild.members.cache.get(player).send(message);
+    //global.getGuild().members.cache.get(player).send(message);
+    await global.getGuild(player, message);
     var [results, metadata] = await (await global.getSequelize()).query(`SELECT name FROM \`${await global.getServer()}\` WHERE id = '${player}';`);
     console.log(`->${results[0].name}: ${message}`);
 }
@@ -17,12 +18,13 @@ async function isDrunk(player)
 
 async function nextAlignment(index, increment)
 {
-    var [results, metadata] = await (await global.getSequelize()).query(`SELECT alive, alignment FROM \`${await global.getServer()}\` WHERE position = ${increment === -1 ? (index === 0 ? players.length - 1 : index - 1) : (index === players.length - 1 ? 0 : index + 1)};`);
+    var [results, metadata] = await (await global.getSequelize()).query(`SELECT alive, alignment FROM \`${await global.getServer()}\` WHERE position = ${increment === -1 ? (index === 0 ? (await global.getNumPlayers()) - 1 : index - 1) : (index === (await global.getNumPlayers()) - 1 ? 0 : index + 1)};`);
     if (results[0].alive === 0)
     {
         return nextAlignment(index + increment, increment);
     }
-    else if (results[0].alignment === global.evil) {
+    else if (results[0].alignment === global.evil)
+    {
         return 1;
     }
     else if (results[0].alignment === global.recluse)
@@ -63,8 +65,7 @@ async function chooseComparisonPairs(player, type)
     var playerRole;
     var role;
     var players = await global.getPlayers();
-    var guild = await global.getGuild();
-    //check if drunk
+    //var guild = await global.getGuild();
     var [results, metadata] = await (await global.getSequelize()).query(`SELECT drunk, poisoned, role FROM \`${await global.getServer()}\` WHERE id = '${player}';`);
     if (results[0].drunk === 1 || results[0].poisoned === 1)
     {
@@ -72,12 +73,12 @@ async function chooseComparisonPairs(player, type)
         playerRole = results[0].role;
     }
     do {
-        index = Math.floor(Math.random() * (numPlayers));
+        index = Math.floor(Math.random() * (await global.getNumPlayers()));
         [results, metadata] = await (await global.getSequelize()).query(`SELECT role, drunk FROM \`${await global.getServer()}\` WHERE position = ${index};`);        
     } while (players[index] === player || !(drunk || type.includes(results[0].role) || (type === outsiders && results[0].drunk === 1)));
     role = (type === outsiders && results[0].drunk === 1) ? "drunk" : results[0].role;
     do {
-        index2 = Math.floor(Math.random() * (numPlayers));
+        index2 = Math.floor(Math.random() * (await global.getNumPlayers()));
     } while (players[index2] === player || index === index2);
     r = Math.floor(Math.random() * 1);
     if (drunk)
@@ -88,11 +89,13 @@ async function chooseComparisonPairs(player, type)
         } while (role === playerRole);
         
     }
+    console.log(`${player}: Either ${await global.getDisplayName(players[index])} or ${await global.getDisplayName(players[index2])} is ${role}`);
     if (r === 1) {
-         await sendMessage(player, `Either ${guild.member(players[index]).displayName} or ${guild.member(players[index2]).displayName} is ${role}`);
+        
+         await sendMessage(player, `Either ${await global.getDisplayName(players[index])} or ${await global.getDisplayName(players[index2])} is ${role}`);
     }
     else {
-        await sendMessage(player, `Either ${guild.member(players[index2]).displayName} or ${guild.member(players[index]).displayName} is ${role}`);
+        await sendMessage(player, `Either ${await global.getDisplayName(players[index2])} or ${await global.getDisplayName(players[index])} is ${role}`);
     }  
 }
 
@@ -100,7 +103,6 @@ async function isRole(player, role)
 {
     console.log(`PLAYER: ${player}`);
     var [results, metadata] = await (await global.getSequelize()).query(`SELECT role FROM \`${await global.getServer()}\` WHERE id = '${player}';`);
-   // console.log(results[0].role);
     if (results[0].role === role) return true;
     return false;
 }
@@ -108,6 +110,13 @@ async function isRole(player, role)
 async function checkIfValidPlayer(name)
 {
     var [results, metadata] = await (await global.getSequelize()).query(`SELECT * FROM \`${await global.getServer()}\` WHERE name = '${name}';`);
+    if (results.length === 0) return false;
+    return true;
+}
+
+async function roleInPlay(role)
+{
+    var [results, metadata] = await (await global.getSequelize()).query(`SELECT * FROM \`${await global.getServer()}\` WHERE role = '${role}';`);
     if (results.length === 0) return false;
     return true;
 }
@@ -120,3 +129,4 @@ module.exports.waitForAction = waitForAction;
 module.exports.chooseComparisonPairs = chooseComparisonPairs;
 module.exports.isRole = isRole;
 module.exports.checkIfValidPlayer = checkIfValidPlayer;
+module.exports.roleInPlay = roleInPlay;

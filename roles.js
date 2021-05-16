@@ -13,7 +13,7 @@ async function scarletwoman(player)
 
 async function ravenkeeper(player)
 {
-    var [results, metadata] = await (await global.getSequelize()).query(`SELECT deathLastNight FROM \`games\` WHERE server = '${await global.getServer()}\' AND deathLastNight IS NOT NULL;`);
+    var [results, metadata] = await (await global.getSequelize()).query(`SELECT deathLastNight FROM \`games\` WHERE server = '${await global.getServer()}' AND deathLastNight IS NOT NULL;`);
     if (results.length === 0) return;
     var [name, metadata] = await (await global.getSequelize()).query(`SELECT name FROM \`${await global.getServer()}\` WHERE id = '${player}';`);
     if (results[0].deathLastNight === name[0].name)
@@ -195,6 +195,27 @@ async function demonInfo(player)
            await util.sendMessage(player, `${results[result].name} is the ${results[result].role}`);
         }
     }
+  
+    await util.sendMessage(player, '3 roles which aren\'t in play:');
+    for (var i = 0; i < 3; i++)
+    {
+        var count = 0;
+        var r = Math.floor(Math.random() * 3);
+        var type = townsfolk;
+        if (r === 1)
+        {
+            type = outsiders;
+        }
+        util.shuffleArray(type);
+        var selected = type[count];
+        while (await util.roleInPlay(selected))
+        {
+            count++;
+            selected = type[count];
+        }
+        await util.sendMessage(player, `${selected}`);
+    }    
+
 }
 
 module.exports.imp = imp;
