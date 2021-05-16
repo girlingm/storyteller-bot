@@ -8,13 +8,11 @@ All townsfolk, outsiders and minions in play are random.
 
 Author: [Miranda Girling](https://www.github.com/girlingm)
 
-
-Node.js modules used:
+main Node.js modules used:
 * Sequelize.js
 * Discord.js
 
-**NOTE** (02/04/21): currently the bot prints all output and takes all input from the main channel in the server (for debugging purposes the identify of the user calling commands for specific roles is not checked).
-Once I have implemented all roles (and drunkenness for each role) I will change this and start beta testing :) in the meantime I've removed that feature so as not too annoy my friends too much.
+**UPDATE** (16/05/21): The bot now contacts users via DM for night actions, all roles in Trouble Brewing have been implementing and I've begun to test the bot out with the help of a few friends. All known bugs and user suggestions are posted on the [trello board](https://trello.com/b/MWD4DnbQ/storyteller-bot).
 
 ## Commands
 
@@ -43,7 +41,7 @@ Once I have implemented all roles (and drunkenness for each role) I will change 
 ### Scripts
 | Script            | Status      |
 |-------------------|-------------|
-| Trouble Brewing   | In Progress |
+| Trouble Brewing   | Testing...  |
 | Bad Moon Rising   | Not Started |
 | Sects and Violets | Not Started |
 
@@ -65,10 +63,10 @@ Once I have implemented all roles (and drunkenness for each role) I will change 
 | Investigator   | [x]   | [x]   |
 | Librarian      | [x]   | [x]   |
 | Saint          | [x]   | [x]   |
-| Recluse        | [x]   | []    |
+| Recluse        | [x]   | [X]   |
 | Butler         | [x]   | [x]   |
-| Spy            | [x]   | []    |
-| Scarlet Woman  | [x]   | []    |
-| Poisoner       | [x]   | []    |
+| Spy            | [x]   | [X]   |
+| Scarlet Woman  | [x]   | [X]   |
+| Poisoner       | [x]   | [X]   |
 | Baron          | [x]   | [x]   |
-| Imp            | [x]   | []    |
+| Imp            | [x]   | [X]   |
