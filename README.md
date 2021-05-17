@@ -12,12 +12,11 @@ main Node.js modules used:
 * Sequelize.js
 * Discord.js
 
-**UPDATE** (16/05/21): The bot now contacts users via DM for night actions, all roles in Trouble Brewing have been implementing and I've begun to test the bot out with the help of a few friends. All known bugs and user suggestions are posted on the [trello board](https://trello.com/b/MWD4DnbQ/storyteller-bot).
+**UPDATE** (16/05/21): The bot now contacts users via DM for night actions, all roles in Trouble Brewing have been implemented and I have begun to test the bot out with the help of a few friends. All known bugs and user suggestions are posted on the [trello board](https://trello.com/b/MWD4DnbQ/storyteller-bot).
 
 ## Commands
 
 ### Global (for use in server)
- * _!join_ joins server
  * _!init <@player1> <@player2> ... <@playern>_ creates a game with mentioned players 
  * _!night_ trigger next night sequence
  * _!open-nominations_ opens nominations
